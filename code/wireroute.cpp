@@ -12,6 +12,7 @@
 #include <chrono>
 #include <string>
 #include <vector>
+#include <climits>
 
 #include <unistd.h>
 #include <omp.h>
@@ -87,6 +88,42 @@ void write_output(const std::vector<Wire>& wires, const int num_wires, const std
   }
 
   out_wires.close();
+}
+
+int calcCost(const std::vector<std::vector<int>>& occupancy ,int xi,int yi, int xf, int yf, int bendX, int bendY)
+{ int cost = 0;
+  if(bendX == xf)
+  {
+    for(int i = std::min(yi,bendY); i < std::max(yi,bendY); i++)
+    {
+      cost += occupancy[xi][i];
+    }
+    for(int i = std::min(xi,xf); i < std::max(xi,xf); i ++)
+    {
+      cost += occupancy[i][bendY];
+    }
+    for(int i = std::min(bendY,yf); i < std::max(bendY,yf); i ++)
+    {
+      cost += occupancy[xf][i];
+
+    }
+  }
+  else{
+    for(int i = std::min(xi,bendX); i < std::max(xi,bendX); i++)
+    {
+      cost += occupancy[i][yi];
+    }
+    for(int i = std::min(yi,yf); i < std::max(yi,yf); i ++)
+    {
+      cost += occupancy[bendX][i];
+    }
+    for(int i = std::min(bendX,xf); i < std::max(bendX,xf); i ++)
+    {
+      cost += occupancy[i][yf];
+    }
+  }
+  return cost;
+  
 }
 
 int main(int argc, char *argv[]) {
@@ -167,6 +204,140 @@ int main(int argc, char *argv[]) {
   std::cout << "Initialization time (sec): " << std::fixed << std::setprecision(10) << init_time << '\n';
 
   const auto compute_start = std::chrono::steady_clock::now();
+
+  for(int iter = 0; iter < SA_iters; iter++)
+  {
+    if(parallel_mode == 'W')
+    {
+      for(int wireIndex = 0; wireIndex < num_wires; wireIndex++)
+      {
+        struct Wire currWire = wires[wireIndex];
+        int xi, yi, xf, yf;
+        xi = currWire.start_x;
+        yi = currWire.start_y;
+        xf = currWire.end_x;
+        yf = currWire.end_y;
+        int bendx_init = currWire.bend1_x;
+        int bendy_init = currWire.bend1_y;
+        int initial_cost = calcCost(occupancy, xi, yi, xf, yf, bendx_init,  bendy_init);
+        int delta_x = std::abs(xf - xi);
+        int delta_y = std::abs(yf - yi);
+        int* costs = (int*) malloc(sizeof(int)* (delta_x + delta_y));
+        struct Wire* possRoutes = (struct Wire*)malloc(sizeof(struct Wire)*(delta_x + delta_y));
+        if(delta_x == 0)
+        {
+          for(int i = std::min(yi,yf); i < std::max(yi,yf); i++ )
+          {
+            occupancy[xi][i]+=1;
+          }
+        }
+        else if (delta_y == 0)
+        {
+          for(int i = std::min(xi,xf); i < std::max(xi,xf); i++ )
+          {
+            occupancy[i][yi]+=1;
+          }
+        }
+        else{
+          
+          int chunk_size = (delta_x + delta_y) / num_threads;
+          omp_set_num_threads(num_threads);
+          #pragma omp parallel
+          {
+          // {
+            // int threadId = omp_get_thread_num();
+            #pragma omp parallel for schedule(static, chunk_size)
+            for (int threadId = 0; threadId < delta_x + delta_y; threadId ++){
+              int bendX;
+              int bendY;
+              if(threadId < delta_x)
+              {
+                bendY = yf;
+                bendX = std::min(xi,xf) + threadId + 1;
+                
+                
+              }
+              else 
+              {
+                int threadY = threadId - delta_x;
+                bendX = xf;
+                bendY = std::min(yi,yf) + threadY + 1;
+                
+              }
+              int cost = calcCost(occupancy,xi,yi,xf,yf,bendX, bendY);
+              costs[threadId] = cost;
+              possRoutes[threadId].start_x = xi;
+              possRoutes[threadId].start_y = yi;
+              possRoutes[threadId].end_x = xf;
+              possRoutes[threadId].end_y = yf;
+              possRoutes[threadId].bend1_x = bendX;
+              possRoutes[threadId].bend1_y = bendY;
+          }
+        }
+        }
+        
+
+        int min_ind = 0;
+        int min_cost = INT_MAX;
+        for (int i = 0; i < delta_x + delta_y; i ++) {
+          if (costs[i] < min_cost){
+            min_cost = costs[i];
+            min_ind = i;
+          }
+        }
+
+        if (min_cost < initial_cost) {
+
+          
+          struct Wire best_route = possRoutes[min_ind];
+          int bendX = best_route.bend1_x;
+          int bendY = best_route.bend1_y;
+          xi = best_route.start_x;
+          yi = best_route.start_y;
+          xf = best_route.end_x;
+          yf = best_route.end_y;
+
+          if(bendX == xf)
+          {
+            for(int i = std::min(yi,bendY); i < std::max(yi,bendY); i++)
+            {
+              occupancy[xi][i] += 1;
+            }
+            for(int i = std::min(xi,xf); i < std::max(xi,xf); i ++)
+            {
+              occupancy[i][bendY] += 1;
+            }
+            for(int i = std::min(bendY,yf); i < std::max(bendY,yf); i ++)
+            {
+              occupancy[xf][i] += 1;
+
+            }
+          }
+          else{
+            for(int i = std::min(xi,bendX); i < std::max(xi,bendX); i++)
+            {
+              occupancy[i][yi] += 1;
+            }
+            for(int i = std::min(yi,yf); i < std::max(yi,yf); i ++)
+            {
+              occupancy[bendX][i] += 1;
+            }
+            for(int i = std::min(bendX,xf); i < std::max(bendX,xf); i ++)
+            {
+              occupancy[i][yf] += 1;
+            }
+          }
+        }
+
+
+
+
+      free(costs);
+      free(possRoutes);
+      }
+    }    
+    
+  }
 
   /** 
    * Implement the wire routing algorithm here

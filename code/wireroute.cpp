@@ -13,6 +13,8 @@
 #include <string>
 #include <vector>
 #include <climits>
+#include <random>
+
 
 #include <unistd.h>
 #include <omp.h>
@@ -124,6 +126,53 @@ int calcCost(const std::vector<std::vector<int>>& occupancy ,int xi,int yi, int 
   }
   return cost;
   
+}
+
+
+void update(const std::vector<std::vector<int>>& occupancy , struct Wire route)
+{
+          int bendX = route.bend1_x;
+          int bendY = route.bend1_y;
+          int xi = route.start_x;
+          int yi = route.start_y;
+          int xf = route.end_x;
+          int yf = route.end_y;
+
+          if(bendX == xf)
+          {
+            for(int i = std::min(yi,bendY); i < std::max(yi,bendY); i++)
+            {
+              occupancy[xi][i] += 1;
+            }
+            for(int i = std::min(xi,xf); i < std::max(xi,xf); i ++)
+            {
+              occupancy[i][bendY] += 1;
+            }
+            for(int i = std::min(bendY,yf); i < std::max(bendY,yf); i ++)
+            {
+              occupancy[xf][i] += 1;
+
+            }
+          }
+          else{
+            for(int i = std::min(xi,bendX); i < std::max(xi,bendX); i++)
+            {
+              occupancy[i][yi] += 1;
+            }
+            for(int i = std::min(yi,yf); i < std::max(yi,yf); i ++)
+            {
+              occupancy[bendX][i] += 1;
+            }
+            for(int i = std::min(bendX,xf); i < std::max(bendX,xf); i ++)
+            {
+              occupancy[i][yf] += 1;
+            }
+          }
+        
+
+
+
+
 }
 
 int main(int argc, char *argv[]) {
@@ -279,6 +328,22 @@ int main(int argc, char *argv[]) {
 
         int min_ind = 0;
         int min_cost = INT_MAX;
+        std::random_device rd;  // obtain a random number from hardware
+        std::mt19937 gen(rd()); // seed the generator
+
+        // Define a distribution (uniform distribution between 0 and 1)
+        std::uniform_real_distribution<> dis(0.0, 1.0);
+
+        // Generate a random number between 0 and 1
+        float random_number = dis(gen);
+        
+        if(random_number < SA_prob)
+        {
+          std::uniform_int_distribution<> dis(0, delta_x + delta_y);
+          int random_index= dis(gen);
+          update(occupancy, wires[random_index]);
+        }
+        else{
         for (int i = 0; i < delta_x + delta_y; i ++) {
           if (costs[i] < min_cost){
             min_cost = costs[i];
@@ -287,51 +352,11 @@ int main(int argc, char *argv[]) {
         }
 
         if (min_cost < initial_cost) {
-
-          
-          struct Wire best_route = possRoutes[min_ind];
-          int bendX = best_route.bend1_x;
-          int bendY = best_route.bend1_y;
-          xi = best_route.start_x;
-          yi = best_route.start_y;
-          xf = best_route.end_x;
-          yf = best_route.end_y;
-
-          if(bendX == xf)
-          {
-            for(int i = std::min(yi,bendY); i < std::max(yi,bendY); i++)
-            {
-              occupancy[xi][i] += 1;
-            }
-            for(int i = std::min(xi,xf); i < std::max(xi,xf); i ++)
-            {
-              occupancy[i][bendY] += 1;
-            }
-            for(int i = std::min(bendY,yf); i < std::max(bendY,yf); i ++)
-            {
-              occupancy[xf][i] += 1;
-
-            }
-          }
-          else{
-            for(int i = std::min(xi,bendX); i < std::max(xi,bendX); i++)
-            {
-              occupancy[i][yi] += 1;
-            }
-            for(int i = std::min(yi,yf); i < std::max(yi,yf); i ++)
-            {
-              occupancy[bendX][i] += 1;
-            }
-            for(int i = std::min(bendX,xf); i < std::max(bendX,xf); i ++)
-            {
-              occupancy[i][yf] += 1;
-            }
-          }
+          update(occupancy, wires[min_ind]);
         }
 
-
-
-
+          
+          
       free(costs);
       free(possRoutes);
       }

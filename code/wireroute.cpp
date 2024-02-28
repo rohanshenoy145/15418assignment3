@@ -99,7 +99,7 @@ int calcCost(std::vector<std::vector<int>>& occupancy ,int xi,int yi, int xf, in
     {
       if(i>=0 && i< dim_y)
         {
-          cost += occupancy[xi][i];
+          cost += occupancy[xi][i] + 1;
         }
       
     }
@@ -107,14 +107,14 @@ int calcCost(std::vector<std::vector<int>>& occupancy ,int xi,int yi, int xf, in
     {
       if(i>=0 && i< dim_x)
         {
-      cost += occupancy[i][bendY];
+      cost += occupancy[i][bendY] + 1;
         }
     }
     for(int i = std::min(bendY,yf); i <= std::max(bendY,yf); i ++)
     {
       if(i>=0 && i< dim_y)
         {
-      cost += occupancy[xf][i];
+      cost += occupancy[xf][i] + 1;
         }
 
     }
@@ -124,21 +124,21 @@ int calcCost(std::vector<std::vector<int>>& occupancy ,int xi,int yi, int xf, in
     {
       if(i>=0 && i< dim_x)
         {
-      cost += occupancy[i][yi];
+      cost += occupancy[yi][i] + 1;
         }
     }
     for(int i = std::min(yi,yf); i < std::max(yi,yf); i ++)
     {
       if(i>=0 && i< dim_y)
         {
-      cost += occupancy[bendX][i];
+      cost += occupancy[bendX][i] + 1;
         }
     }
     for(int i = std::min(bendX,xf); i <= std::max(bendX,xf); i ++)
     {
       if(i>=0 && i< dim_x)
         {
-      cost += occupancy[i][yf];
+      cost += occupancy[i][yf] + 1;
         }
     }
   }
@@ -160,24 +160,24 @@ void update(std::vector<std::vector<int>>& occupancy , struct Wire route, int di
           {
             for(int i = std::min(yi,bendY); i < std::max(yi,bendY); i++)
             {
-              if(i>=0 && i< dim_y)
+              if(i>=0 && i< dim_x)
               {
-                occupancy[xi][i] += 1;
+                occupancy[i][xi] += 1;
               }
               
             }
             for(int i = std::min(xi,xf); i < std::max(xi,xf); i ++)
             {
-              if(i>=0 && i < dim_x)
+              if(i>=0 && i < dim_y)
               {
-              occupancy[i][bendY] += 1;
+              occupancy[bendY][i] += 1;
               }
             }
             for(int i = std::min(bendY,yf); i <= std::max(bendY,yf); i ++)
             {
-              if(i>=0 && i< dim_y)
+              if(i>=0 && i< dim_x)
               {
-              occupancy[xf][i] += 1;
+              occupancy[i][xf] += 1;
               }
 
             }
@@ -185,23 +185,23 @@ void update(std::vector<std::vector<int>>& occupancy , struct Wire route, int di
           else{
             for(int i = std::min(xi,bendX); i < std::max(xi,bendX); i++)
             {
-              if(i>=0 && i< dim_x)
+              if(i>=0 && i< dim_y)
               {
-              occupancy[i][yi] += 1;
+              occupancy[yi][i] += 1;
               }
             }
             for(int i = std::min(yi,yf); i < std::max(yi,yf); i ++)
             {
-              if(i>=0 && i< dim_y)
+              if(i>=0 && i< dim_x)
               {
-              occupancy[bendX][i] += 1;
+              occupancy[i][bendX] += 1;
               }
             }
             for(int i = std::min(bendX,xf); i <= std::max(bendX,xf); i ++)
             {
-              if(i>=0 && i< dim_x)
+              if(i>=0 && i< dim_y)
               {
-              occupancy[i][yf] += 1;
+              occupancy[yf][i] += 1;
               }
             }
           }
@@ -221,24 +221,24 @@ void removeInitial(std::vector<std::vector<int>>& occupancy , struct Wire route,
           {
             for(int i = std::min(yi,bendY); i < std::max(yi,bendY); i++)
             {
-              if(i>=0 && i< dim_y)
+              if(i>=0 && i< dim_x)
               {
-                occupancy[xi][i] -= 1;
+                occupancy[i][xi] -= 1;
               }
               
             }
             for(int i = std::min(xi,xf); i < std::max(xi,xf); i ++)
             {
-              if(i>=0 && i < dim_x)
+              if(i>=0 && i < dim_y)
               {
-              occupancy[i][bendY] -= 1;
+              occupancy[bendY][i] -= 1;
               }
             }
             for(int i = std::min(bendY,yf); i <= std::max(bendY,yf); i ++)
             {
-              if(i>=0 && i< dim_y)
+              if(i>=0 && i< dim_x)
               {
-              occupancy[xf][i] -= 1;
+              occupancy[i][xf] -= 1;
               }
 
             }
@@ -246,26 +246,164 @@ void removeInitial(std::vector<std::vector<int>>& occupancy , struct Wire route,
           else{
             for(int i = std::min(xi,bendX); i < std::max(xi,bendX); i++)
             {
-              if(i>=0 && i< dim_x)
+              if(i>=0 && i< dim_y)
               {
-              occupancy[i][yi] -= 1;
+              occupancy[yi][i] -= 1;
               }
             }
             for(int i = std::min(yi,yf); i < std::max(yi,yf); i ++)
             {
-              if(i>=0 && i< dim_y)
+              if(i>=0 && i< dim_x)
               {
-              occupancy[bendX][i] -= 1;
+              occupancy[i][bendX] -= 1;
               }
             }
             for(int i = std::min(bendX,xf); i <= std::max(bendX,xf); i ++)
             {
-              if(i>=0 && i< dim_x)
+              if(i>=0 && i< dim_y)
               {
-              occupancy[i][yf] -= 1;
+              occupancy[yf][i] -= 1;
               }
             }
           }
+}
+
+int refOccupancy(std::vector<std::vector<int>>& occupancy , struct Wire route, int dim_x, int dim_y, int flag){
+  // If flag == -1, decrement occupancy along route
+  // If flag == 1, increment occupancy along route
+  // If flag == 0, calculate cost of adding the route
+  int bend2_x;
+  int bend2_y;
+  int start_x = route.start_x;
+  int start_y = route.start_y;
+  int end_x = route.end_x;
+  int end_y = route.end_y;
+  int bend1_x = route.bend1_x;
+  int bend1_y = route.bend1_y;
+
+  if (bend1_x == start_x) {
+    bend2_x = end_x;
+    bend2_y = bend1_y;
+  }
+  else if (bend1_y == start_y) {
+    bend2_x = bend1_x;
+    bend2_y = end_y;
+  }
+  else {
+    printf("Should not have got here!\n");
+    return -109823498;
+  }
+
+
+  int cost = 0;
+
+  // START TO BEND 1
+  int stepi1 = 1;
+  if(start_y > bend1_y)
+  {
+    stepi1 = -1;
+  }
+  for (int i = start_y ; i != bend1_y; i += stepi1){
+    // if (i == 3) printf("bruh\n");
+    if (flag == 0){
+      cost += occupancy[i][start_x] + 1;
+    }
+    else {
+      occupancy[i][start_x] += flag;
+    }
+  }
+  int stepi2 = 1;
+  if(start_x > bend1_x)
+  {
+    stepi2 = -1;
+  }
+  for (int i = start_x; i != bend1_x; i += stepi2 ) {
+    if (flag == 0){
+      cost += occupancy[start_y][i] + 1;
+    }
+    else {
+      occupancy[start_y][i] += flag;
+    }
+  }
+  // printf("START = (%d, %d)\n", start_x, start_y);
+  // printf("BEND1 = (%d, %d)\n", bend1_x, bend1_y);
+  // printf("BEND2 = (%d, %d)\n", bend2_x, bend2_y);
+  // printf("END = (%d, %d)\n", end_x, end_y);
+
+
+  int stepi3 = 1;
+  if(bend1_x > bend2_x)
+  {
+    stepi3 = -1;
+  }
+  // BEND 1 TO BEND 2
+  for (int i = bend1_x; i !=  bend2_x; i += stepi3) {
+    
+    if (flag == 0){
+      cost += occupancy[bend1_y][i] + 1;
+    }
+    else {
+      occupancy[bend1_y][i] += flag;
+    }
+  }
+
+  int stepi4 = 1;
+  if(bend1_y > bend2_y)
+  {
+    stepi4 = -1;
+  }
+  
+  for (int i = bend1_y; i !=  bend2_y; i += stepi4) {
+    
+    if (flag == 0){
+      cost += occupancy[i][bend1_x] + 1;
+    }
+    else {
+      occupancy[i][bend1_x] += flag;
+    }
+  }
+
+  int stepi5 = 1;
+  if(bend2_x > end_x)
+  {
+    stepi5 = -1;
+  }
+
+
+  // BEND 2 TO END
+  for (int i = bend2_x ; i != end_x; i += stepi5) {
+    if (flag == 0){
+      cost += occupancy[end_y][i] + 1;
+    }
+    else {
+      occupancy[end_y][i] += flag;
+    }
+  }
+
+  int stepi6 = 1;
+  if(bend2_y > end_y)
+  {
+    stepi6 = -1;
+  }
+  for (int i = bend2_y; i !=  end_y; i +=stepi6) {
+    
+    if (flag == 0){
+      cost += occupancy[i][end_x] + 1;
+    }
+    else {
+      occupancy[i][end_x] += flag;
+    }
+  }
+
+  // INCLUDE END POINT
+  if (flag == 0){
+      cost += occupancy[end_y][end_x] + 1;
+    }
+  else {
+    occupancy[end_y][end_x] += flag;
+  }
+  return cost;
+
 }
 
 
@@ -366,10 +504,12 @@ int main(int argc, char *argv[]) {
         for(int wireIndex = 0; wireIndex < num_wires; wireIndex++)
         {
           struct Wire currWire = wires[wireIndex];
-          currWire.bend1_x = currWire.end_x;
+          currWire.bend1_x = currWire.start_x;
           currWire.bend1_y = currWire.end_y;
           wires[wireIndex] = currWire;
-          update(occupancy, currWire,  dim_x,  dim_y);
+          // printf("INITIAL COST = %d",refOccupancy(occupancy, currWire,  dim_x,  dim_y, 0) );
+          refOccupancy(occupancy, currWire,  dim_x,  dim_y, 1);
+          // printf("INITIAL COST = %d",refOccupancy(occupancy, currWire,  dim_x,  dim_y, 0) );
 
           
         }
@@ -385,88 +525,110 @@ int main(int argc, char *argv[]) {
             yi = currWire.start_y;
             xf = currWire.end_x;
             yf = currWire.end_y;
-            int bendx_init = currWire.bend1_x;
-            int bendy_init = currWire.bend1_y;
+            // int bendx_init = currWire.bend1_x;
+            // int bendy_init = currWire.bend1_y;
             int delta_x = std::abs(xf - xi);
             int delta_y = std::abs(yf - yi);
-            
+            if(delta_x == 0 || delta_y == 0 )
+            {
+              continue;
+            }
             //Check straight line wire
-            if(delta_x == 0)
-            {
-              //Only update straight line wire on first iteration
-              if( iter == 0){
-                for(int i = std::min(yi,yf); i <= std::max(yi,yf); i++ )
-                {
-                  occupancy[xi][i]+=1;
-                }
-              }
-              //Skip rest of loop body
-              else
-              {
-                continue;
-              }
-            }
+            // if(delta_x == 0)
+            // {
+            //   //Only update straight line wire on first iteration
+            //   if( iter == 0){
+            //     for(int i = std::min(yi,yf); i <= std::max(yi,yf); i++ )
+            //     {
+            //       occupancy[i][xf]+=1;
+            //     }
+            //   }
+            //   //Skip rest of loop body
+            //   else
+            //   {
+            //     continue;
+            //   }
+            // }
             
-            else if (delta_y == 0)
-            {
-              if(iter == 0)
-              {
+            // else if (delta_y == 0)
+            // {
+            //   if(iter == 0)
+            //   {
 
-                for(int i = std::min(xi,xf); i <= std::max(xi,xf); i++ )
-                {
-                  occupancy[i][yi]+=1;
-                }
-              }
-              else
-              {
-                continue;
-              }
-            }
+            //     for(int i = std::min(xi,xf); i <= std::max(xi,xf); i++ )
+            //     {
+            //       occupancy[yi][i]+=1;
+            //     }
+            //   }
+            //   else
+            //   {
+            //     continue;
+            //   }
+            // }
             
             else
             {
-              int initial_cost = calcCost(occupancy, xi, yi, xf, yf, bendx_init,  bendy_init, dim_x, dim_y);
+              refOccupancy(occupancy,currWire,dim_x,dim_y, -1);
+              int initial_cost = refOccupancy(occupancy, currWire, dim_x, dim_y, 0);
               int* costs = (int*) malloc(sizeof(int) * (delta_x + delta_y));
               struct Wire* possRoutes = (struct Wire*)malloc(sizeof(struct Wire)*(delta_x + delta_y));
-              int chunk_size = (delta_x + delta_y) / num_threads;
+              int chunk_size; 
+              
               omp_set_num_threads(num_threads);
-              #pragma omp parallel
-              {
+              // #pragma omp parallel
+              // {
+                chunk_size = 1;
                 #pragma omp parallel for schedule(static, chunk_size)
-                for (int threadId = 0; threadId < delta_x + delta_y; threadId ++)
+                for (int threadId = 0; threadId < delta_x; threadId ++)
                 {
-                  int bendX;
-                  int bendY;
-                  if(threadId < delta_x)
+                  // int bendX;
+                  // int bendY;
+                  // bendY = yi; // bendY = yi
+                  // bendX = std::min(xi,xf) + threadId + 1;
+                  if(xi > xf)
                   {
-                    bendY = yf;
-                    bendX = std::min(xi,xf) + threadId + 1;
-                    
-                    
+                    currWire.bend1_x = xi - threadId - 1;
                   }
-                  else 
-                  {
-                    int threadY = threadId - delta_x;
-                    bendX = xf;
-                    bendY = std::min(yi,yf) + threadY + 1;
-                    
+                  else {
+                    currWire.bend1_x = xi + threadId + 1;
                   }
-                
-                
+                  
+                  currWire.bend1_y = yi;
 
-                  int cost = calcCost(occupancy,xi,yi,xf,yf,bendX, bendY, dim_x, dim_y);
+                  int cost = refOccupancy(occupancy, currWire, dim_x, dim_y, 0);
                   costs[threadId] = cost;
-                  possRoutes[threadId].start_x = xi;
-                  possRoutes[threadId].start_y = yi;
-                  possRoutes[threadId].end_x = xf;
-                  possRoutes[threadId].end_y = yf;
-                  possRoutes[threadId].bend1_x = bendX;
-                  possRoutes[threadId].bend1_y = bendY; 
+                  possRoutes[threadId] = currWire;
                   
-                  
+                  // atomic check set min
                 }
               
-            }
+              chunk_size = 1;
+              #pragma omp parallel for schedule(static, chunk_size)
+              
+                for (int threadId = 0; threadId <  delta_y; threadId ++)
+                  {
+                    // int bendX;
+                    // int bendY;
+                  
+                    // bendX = xi; // bendX =xi
+                    // bendY = std::min(yi,yf) + threadId + 1;
+                    currWire.bend1_x = xi;
+                    if (yi > yf) {
+                      currWire.bend1_y = yi - threadId - 1;
+                    }
+                    else {
+                      currWire.bend1_y = yi + threadId + 1;
+                    }
+                    
+      
+                    int cost = refOccupancy(occupancy, currWire, dim_x, dim_y, 0);
+                    costs[delta_x + threadId] = cost;
+                    possRoutes[delta_x + threadId] = currWire;
+                    
+                    // atomic check set min
+                  }
+              
+            // }
           //#pragma omp barrier
 
               int min_ind = 0;
@@ -484,8 +646,11 @@ int main(int argc, char *argv[]) {
               {
                 std::uniform_int_distribution<> dis(0, delta_x + delta_y - 1);
                 int random_index= dis(gen);
-                removeInitial(occupancy,currWire,dim_x,dim_y);
-                update(occupancy, possRoutes[random_index],  dim_x,  dim_y);
+                // currWire.bend1_x = bendx_init;
+                // currWire.bend1_y = bendy_init;
+                //struct Wire original_wire = wires[wireIndex];
+                //refOccupancy(occupancy,original_wire,dim_x,dim_y, -1);
+                refOccupancy(occupancy, possRoutes[random_index],  dim_x,  dim_y, 1);
                 //update wire
                 wires[wireIndex] = possRoutes[random_index];
               }
@@ -493,18 +658,27 @@ int main(int argc, char *argv[]) {
               {
                 for (int i = 0; i < delta_x + delta_y; i ++) 
                 {
+                  // printf("Iter: %d, Wire: %d, Cost: %d\n",iter,wireIndex,costs[i]);
                   if (costs[i] < min_cost)
                   {
                     min_cost = costs[i];
                     min_ind = i;
                   }
-                }
 
+                }
+                struct Wire original_wire = wires[wireIndex];
                 if (min_cost < initial_cost) 
                 {
-                  removeInitial(occupancy,currWire,dim_x,dim_y);
-                  update(occupancy, possRoutes[min_ind], dim_x,  dim_y);
+                  // currWire.bend1_x = bendx_init;
+                  // currWire.bend1_y = bendy_init;
+                  // printf("min cost is  %d and initial is %d \n", min_cost, initial_cost);
+                  
+                  refOccupancy(occupancy, possRoutes[min_ind], dim_x,  dim_y, 1);
                   wires[wireIndex] = possRoutes[min_ind];
+                }
+                else{
+                    refOccupancy(occupancy,original_wire,dim_x,dim_y, 1);
+
                 }
               }
             }

@@ -632,8 +632,8 @@ int main(int argc, char *argv[]) {
     else
     {
       //dynamic omp synch, locks, batches
-      for (timestep = 0; timestep < SA_iters; timestep++){
-        if(iter == 0){
+      for (int timestep = 0; timestep < SA_iters; timestep++){
+        if(timestep == 0){
           for(int wireIndex = 0; wireIndex < num_wires; wireIndex++)
           {
             struct Wire currWire = wires[wireIndex];
@@ -645,14 +645,14 @@ int main(int argc, char *argv[]) {
         }
         else {
           int num_batches = (num_wires + batch_size - 1) / batch_size;
-          for (b = 0; b < num_batches; b ++) { 
-            struct Wire* routes = calloc(sizeof(struct Wire), B);
+          for (int b = 0; b < num_batches; b ++) { 
+            struct Wire* routes = (Wire*)calloc(sizeof(struct Wire), batch_size);
             int w = 0;
             for (int i = 0; i < batch_size; i ++) {
               // find route for the wire using logic from given the current occupancy matrix
               int wireIndex = (batch_size * b) + i;
-              if (wireIdx >= num_wires){
-                continue
+              if (wireIndex >= num_wires){
+                continue;
               }
               w ++;
               struct Wire currWire = wires[wireIndex];
@@ -667,7 +667,7 @@ int main(int argc, char *argv[]) {
                 refOccupancy(occupancy,currWire,dim_x,dim_y, -1);
                 int initial_cost = refOccupancy(occupancy, currWire, dim_x, dim_y, 0);
                 int min_cost = initial_cost;
-                int best_route = currWire;
+                struct Wire best_route = currWire;
                 struct Wire* possRoutes = (struct Wire*)malloc(sizeof(struct Wire)*(delta_x + delta_y));
                 for (int d_x = 0; d_x < delta_x; d_x += 1 ){
                   if(xi > xf)
@@ -726,10 +726,10 @@ int main(int argc, char *argv[]) {
 
             for (int i = 0; i < w; i ++){
               // #pragma omp atomic 
-              refOccupancy(occupancy, wires[wireIndex], dim_x, dim_y, -1)
+              //refOccupancy(occupancy, wires[wireIndex], dim_x, dim_y, -1) // didn't we already remove it in earlier loop?
               refOccupancy(occupancy, routes[i], dim_x, dim_y, 1);
               // #pragma omp end atomic
-              wires[wireIndex] = routes[i];
+              wires[(batch_size * b) + i] = routes[i];
             }           
           }
         }

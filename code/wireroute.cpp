@@ -507,11 +507,7 @@ int main(int argc, char *argv[]) {
           currWire.bend1_x = currWire.start_x;
           currWire.bend1_y = currWire.end_y;
           wires[wireIndex] = currWire;
-          // printf("INITIAL COST = %d",refOccupancy(occupancy, currWire,  dim_x,  dim_y, 0) );
           refOccupancy(occupancy, currWire,  dim_x,  dim_y, 1);
-          // printf("INITIAL COST = %d",refOccupancy(occupancy, currWire,  dim_x,  dim_y, 0) );
-
-          
         }
       }
       else
@@ -525,48 +521,9 @@ int main(int argc, char *argv[]) {
             yi = currWire.start_y;
             xf = currWire.end_x;
             yf = currWire.end_y;
-            // int bendx_init = currWire.bend1_x;
-            // int bendy_init = currWire.bend1_y;
             int delta_x = std::abs(xf - xi);
             int delta_y = std::abs(yf - yi);
-            if(delta_x == 0 || delta_y == 0 )
-            {
-              continue;
-            }
-            //Check straight line wire
-            // if(delta_x == 0)
-            // {
-            //   //Only update straight line wire on first iteration
-            //   if( iter == 0){
-            //     for(int i = std::min(yi,yf); i <= std::max(yi,yf); i++ )
-            //     {
-            //       occupancy[i][xf]+=1;
-            //     }
-            //   }
-            //   //Skip rest of loop body
-            //   else
-            //   {
-            //     continue;
-            //   }
-            // }
-            
-            // else if (delta_y == 0)
-            // {
-            //   if(iter == 0)
-            //   {
-
-            //     for(int i = std::min(xi,xf); i <= std::max(xi,xf); i++ )
-            //     {
-            //       occupancy[yi][i]+=1;
-            //     }
-            //   }
-            //   else
-            //   {
-            //     continue;
-            //   }
-            // }
-            
-            else
+            if(delta_x != 0 || delta_y != 0 )
             {
               refOccupancy(occupancy,currWire,dim_x,dim_y, -1);
               int initial_cost = refOccupancy(occupancy, currWire, dim_x, dim_y, 0);
@@ -575,16 +532,13 @@ int main(int argc, char *argv[]) {
               int chunk_size; 
               
               omp_set_num_threads(num_threads);
-              // #pragma omp parallel
-              // {
-                chunk_size = 1;
-                #pragma omp parallel for schedule(static, chunk_size)
+              #pragma omp parallel
+              {
+                chunk_size = (delta_x + num_threads - 1) / num_threads;
+                #pragma omp for schedule(static, chunk_size)
                 for (int threadId = 0; threadId < delta_x; threadId ++)
                 {
-                  // int bendX;
-                  // int bendY;
-                  // bendY = yi; // bendY = yi
-                  // bendX = std::min(xi,xf) + threadId + 1;
+
                   if(xi > xf)
                   {
                     currWire.bend1_x = xi - threadId - 1;
@@ -599,19 +553,14 @@ int main(int argc, char *argv[]) {
                   costs[threadId] = cost;
                   possRoutes[threadId] = currWire;
                   
-                  // atomic check set min
                 }
               
-              chunk_size = 1;
-              #pragma omp parallel for schedule(static, chunk_size)
+              chunk_size = (delta_y + num_threads - 1) / delta_y;
+              #pragma omp for schedule(static, chunk_size)
               
                 for (int threadId = 0; threadId <  delta_y; threadId ++)
                   {
-                    // int bendX;
-                    // int bendY;
-                  
-                    // bendX = xi; // bendX =xi
-                    // bendY = std::min(yi,yf) + threadId + 1;
+
                     currWire.bend1_x = xi;
                     if (yi > yf) {
                       currWire.bend1_y = yi - threadId - 1;
@@ -627,8 +576,7 @@ int main(int argc, char *argv[]) {
                     
                     // atomic check set min
                   }
-              
-            // }
+              }
           //#pragma omp barrier
 
               int min_ind = 0;
@@ -646,10 +594,6 @@ int main(int argc, char *argv[]) {
               {
                 std::uniform_int_distribution<> dis(0, delta_x + delta_y - 1);
                 int random_index= dis(gen);
-                // currWire.bend1_x = bendx_init;
-                // currWire.bend1_y = bendy_init;
-                //struct Wire original_wire = wires[wireIndex];
-                //refOccupancy(occupancy,original_wire,dim_x,dim_y, -1);
                 refOccupancy(occupancy, possRoutes[random_index],  dim_x,  dim_y, 1);
                 //update wire
                 wires[wireIndex] = possRoutes[random_index];
@@ -658,7 +602,6 @@ int main(int argc, char *argv[]) {
               {
                 for (int i = 0; i < delta_x + delta_y; i ++) 
                 {
-                  // printf("Iter: %d, Wire: %d, Cost: %d\n",iter,wireIndex,costs[i]);
                   if (costs[i] < min_cost)
                   {
                     min_cost = costs[i];
@@ -669,18 +612,16 @@ int main(int argc, char *argv[]) {
                 struct Wire original_wire = wires[wireIndex];
                 if (min_cost < initial_cost) 
                 {
-                  // currWire.bend1_x = bendx_init;
-                  // currWire.bend1_y = bendy_init;
-                  // printf("min cost is  %d and initial is %d \n", min_cost, initial_cost);
                   
                   refOccupancy(occupancy, possRoutes[min_ind], dim_x,  dim_y, 1);
                   wires[wireIndex] = possRoutes[min_ind];
                 }
                 else{
                     refOccupancy(occupancy,original_wire,dim_x,dim_y, 1);
-
                 }
               }
+              free(costs);
+              free(possRoutes);
             }
           }
         }
@@ -691,6 +632,108 @@ int main(int argc, char *argv[]) {
     else
     {
       //dynamic omp synch, locks, batches
+      for (timestep = 0; timestep < SA_iters; timestep++){
+        if(iter == 0){
+          for(int wireIndex = 0; wireIndex < num_wires; wireIndex++)
+          {
+            struct Wire currWire = wires[wireIndex];
+            currWire.bend1_x = currWire.start_x;
+            currWire.bend1_y = currWire.end_y;
+            wires[wireIndex] = currWire;
+            refOccupancy(occupancy, currWire,  dim_x,  dim_y, 1);
+          }
+        }
+        else {
+          int num_batches = (num_wires + batch_size - 1) / batch_size;
+          for (b = 0; b < num_batches; b ++) { 
+            struct Wire* routes = calloc(sizeof(struct Wire), B);
+            int w = 0;
+            for (int i = 0; i < batch_size; i ++) {
+              // find route for the wire using logic from given the current occupancy matrix
+              int wireIndex = (batch_size * b) + i;
+              if (wireIdx >= num_wires){
+                continue
+              }
+              w ++;
+              struct Wire currWire = wires[wireIndex];
+              int xi, yi, xf, yf;
+              xi = currWire.start_x;
+              yi = currWire.start_y;
+              xf = currWire.end_x;
+              yf = currWire.end_y;
+              int delta_x = std::abs(xf - xi);
+              int delta_y = std::abs(yf - yi);
+              if(delta_x != 0 || delta_y != 0 ){
+                refOccupancy(occupancy,currWire,dim_x,dim_y, -1);
+                int initial_cost = refOccupancy(occupancy, currWire, dim_x, dim_y, 0);
+                int min_cost = initial_cost;
+                int best_route = currWire;
+                struct Wire* possRoutes = (struct Wire*)malloc(sizeof(struct Wire)*(delta_x + delta_y));
+                for (int d_x = 0; d_x < delta_x; d_x += 1 ){
+                  if(xi > xf)
+                  {
+                    currWire.bend1_x = xi - d_x - 1;
+                  }
+                  else {
+                    currWire.bend1_x = xi + d_x + 1;
+                  }
+                  currWire.bend1_y = yi;
+                  int cost = refOccupancy(occupancy, currWire, dim_x, dim_y, 0);
+                  if (cost < min_cost) {
+                    min_cost = cost;
+                    best_route = currWire;
+                  }
+                  possRoutes[d_x] = currWire;
+                }
+
+                for (int d_y = 0; d_y < delta_y; d_y += 1) {
+                  currWire.bend1_x = xi;
+                  if (yi > yf) {
+                    currWire.bend1_y = yi - d_y - 1;
+                  }
+                  else {
+                    currWire.bend1_y = yi + d_y + 1;
+                  }
+                  int cost = refOccupancy(occupancy, currWire, dim_x, dim_y, 0);
+                  if (cost < min_cost) {
+                    min_cost = cost;
+                    best_route = currWire;
+                  }
+                  possRoutes[delta_x + d_y] = currWire;
+                }
+
+                std::random_device rd;  // obtain a random number from hardware
+                std::mt19937 gen(rd()); // seed the generator
+
+                // Define a distribution (uniform distribution between 0 and 1)
+                std::uniform_real_distribution<> dis(0.0, 1.0);
+
+                // Generate a random number between 0 and 1
+                float random_number = dis(gen);
+                if (random_number < SA_prob){
+                  std::uniform_int_distribution<> dis(0, delta_x + delta_y - 1);
+                  int random_index= dis(gen);
+                  routes[i] = possRoutes[random_index];
+                }
+                else{
+                  routes[i] = best_route;
+                }
+
+              }
+
+              // routes[i] = findBestRoute(occupancy, wires[wireIdx]);
+            }     
+
+            for (int i = 0; i < w; i ++){
+              // #pragma omp atomic 
+              refOccupancy(occupancy, wires[wireIndex], dim_x, dim_y, -1)
+              refOccupancy(occupancy, routes[i], dim_x, dim_y, 1);
+              // #pragma omp end atomic
+              wires[wireIndex] = routes[i];
+            }           
+          }
+        }
+      }
     } 
 
   const double compute_time = std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::steady_clock::now() - compute_start).count();

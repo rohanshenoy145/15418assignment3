@@ -132,6 +132,7 @@ int refOccupancy(std::vector<std::vector<int>>& occupancy , struct Wire route, i
       cost += occupancy[i][start_x] + 1;
     }
     else {
+      #pragma omp atomic
       occupancy[i][start_x] += flag;
     }
   }
@@ -145,6 +146,7 @@ int refOccupancy(std::vector<std::vector<int>>& occupancy , struct Wire route, i
       cost += occupancy[start_y][i] + 1;
     }
     else {
+      #pragma omp atomic
       occupancy[start_y][i] += flag;
     }
   }
@@ -166,6 +168,7 @@ int refOccupancy(std::vector<std::vector<int>>& occupancy , struct Wire route, i
       cost += occupancy[bend1_y][i] + 1;
     }
     else {
+      #pragma omp atomic
       occupancy[bend1_y][i] += flag;
     }
   }
@@ -182,6 +185,7 @@ int refOccupancy(std::vector<std::vector<int>>& occupancy , struct Wire route, i
       cost += occupancy[i][bend1_x] + 1;
     }
     else {
+      #pragma omp atomic
       occupancy[i][bend1_x] += flag;
     }
   }
@@ -199,6 +203,7 @@ int refOccupancy(std::vector<std::vector<int>>& occupancy , struct Wire route, i
       cost += occupancy[end_y][i] + 1;
     }
     else {
+      #pragma omp atomic
       occupancy[end_y][i] += flag;
     }
   }
@@ -214,6 +219,7 @@ int refOccupancy(std::vector<std::vector<int>>& occupancy , struct Wire route, i
       cost += occupancy[i][end_x] + 1;
     }
     else {
+      #pragma omp atomic
       occupancy[i][end_x] += flag;
     }
   }
@@ -223,6 +229,7 @@ int refOccupancy(std::vector<std::vector<int>>& occupancy , struct Wire route, i
       cost += occupancy[end_y][end_x] + 1;
     }
   else {
+    #pragma omp atomic
     occupancy[end_y][end_x] += flag;
   }
   return cost;
@@ -474,8 +481,8 @@ int main(int argc, char *argv[]) {
           {
             #pragma omp for schedule(dynamic) 
             for (int b = 0; b < num_batches; b ++) {
-              #pragma omp task
-              {
+              // #pragma omp task
+              // {
                   struct Wire* routes = (Wire*)calloc(sizeof(struct Wire), batch_size);
                 int w = 0;
                 for (int i = 0; i < batch_size; i ++) {
@@ -561,7 +568,7 @@ int main(int argc, char *argv[]) {
                   // #pragma omp end atomic
                   wires[(batch_size * b) + i] = routes[i];
                 } 
-              } // end of task bracket 
+              // } // end of task bracket 
                         
             }  //end of batch loop bracket
           } // end of pragma omp parallel loop

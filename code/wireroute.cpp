@@ -411,7 +411,7 @@ int main(int argc, char *argv[]) {
               #pragma omp parallel
               {
                 // chunk_size = (delta_x + num_threads - 1) / num_threads;
-                #pragma omp for schedule(static, 4)
+                #pragma omp for schedule(static, 32)
                 for (int threadId = 0; threadId < delta_x; threadId ++)
                 {
 
@@ -432,7 +432,7 @@ int main(int argc, char *argv[]) {
                 }
               
               // chunk_size = (delta_y + num_threads - 1) / delta_y;
-              #pragma omp for schedule(static, 4)
+              #pragma omp for schedule(static, 32)
               
                 for (int threadId = 0; threadId <  delta_y; threadId ++)
                   {

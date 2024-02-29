@@ -593,6 +593,45 @@ int main(int argc, char *argv[]) {
                   int delta_y = std::abs(yf - yi);
                   if(delta_x != 0 && delta_y != 0 ){
                     refOccupancy(occupancy,currWire,dim_x,dim_y, -1,true);
+                    std::random_device rd;  // obtain a random number from hardware
+                std::mt19937 gen(rd()); // seed the generator
+                // Define a distribution (uniform distribution between 0 and 1)
+                std::uniform_real_distribution<> dis(0.0, 1.0);
+                // Generate a random number between 0 and 1
+                float random_number = dis(gen);
+                
+                if(random_number < SA_prob)
+                {
+                  // std::uniform_int_distribution<> dis(0, delta_x + delta_y - 1);
+                  // int random_index= dis(gen);
+                  if(random_number < delta_x)
+                  {
+                    if(xi > xf)
+                    {
+                      currWire.bend1_x = xi - (random_number) - 1;
+                    }
+                    else {
+                      currWire.bend1_x = xi + (random_number) + 1;
+                    }
+                    
+                    currWire.bend1_y = yi;
+                  }
+                  else{
+                    currWire.bend1_x = xi;
+                      if (yi > yf) {
+                        currWire.bend1_y = yi - (random_number - delta_x) - 1;
+                      }
+                      else {
+                        currWire.bend1_y = yi + (random_number - delta_x) + 1;
+                      }
+                  }
+                //refOccupancy(occupancy, currWire,  dim_x,  dim_y, 1,false);
+                //update wire
+                routes[i] = currWire;
+                continue;
+
+              }
+              else{
                     int initial_cost = refOccupancy(occupancy, currWire, dim_x, dim_y, 0,true);
                     int min_cost = initial_cost;
                     struct Wire best_route = currWire;
@@ -630,27 +669,26 @@ int main(int argc, char *argv[]) {
                       possRoutes[delta_x + d_y] = currWire;
                     }
 
-                    std::random_device rd;  // obtain a random number from hardware
-                    std::mt19937 gen(rd()); // seed the generator
+                    // std::random_device rd;  // obtain a random number from hardware
+                    // std::mt19937 gen(rd()); // seed the generator
 
-                    // Define a distribution (uniform distribution between 0 and 1)
-                    std::uniform_real_distribution<> dis(0.0, 1.0);
+                    // // Define a distribution (uniform distribution between 0 and 1)
+                    // std::uniform_real_distribution<> dis(0.0, 1.0);
 
                     // Generate a random number between 0 and 1
-                    float random_number = dis(gen);
-                    if (random_number < SA_prob){
-                      std::uniform_int_distribution<> dis(0, delta_x + delta_y - 1);
-                      int random_index= dis(gen);
-                      routes[i] = possRoutes[random_index];
-                    }
-                    else{
+                    // float random_number = dis(gen);
+                    // if (random_number < SA_prob){
+                    //   std::uniform_int_distribution<> dis(0, delta_x + delta_y - 1);
+                    //   int random_index= dis(gen);
+                    //   routes[i] = possRoutes[random_index];
+                    // }
+                    
                       routes[i] = best_route;
-                    }
-                    free(possRoutes);
+                      free(possRoutes);
                   }
-
+                }
                   // routes[i] = findBestRoute(occupancy, wires[wireIdx]);
-                }     
+              }     
 
                 for (int i = 0; i < w; i ++){
                   // #pragma omp atomic 

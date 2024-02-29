@@ -391,6 +391,7 @@ int main(int argc, char *argv[]) {
       //Iterate over each wire sequentially
         for(int wireIndex = 0; wireIndex < num_wires; wireIndex++)
           {
+            
             struct Wire currWire = wires[wireIndex];
             int xi, yi, xf, yf;
             xi = currWire.start_x;
@@ -402,6 +403,49 @@ int main(int argc, char *argv[]) {
             if(delta_x != 0 || delta_y != 0 )
             {
               refOccupancy(occupancy,currWire,dim_x,dim_y, -1,false);
+              
+              std::random_device rd;  // obtain a random number from hardware
+              std::mt19937 gen(rd()); // seed the generator
+              // Define a distribution (uniform distribution between 0 and 1)
+              std::uniform_real_distribution<> dis(0.0, 1.0);
+              // Generate a random number between 0 and 1
+              float random_number = dis(gen);
+              
+              if(random_number < SA_prob)
+              {
+                std::uniform_int_distribution<> dis(0, delta_x + delta_y - 1);
+                int random_index= dis(gen);
+                if(random_number < delt_x)
+                {
+                  if(xi > xf)
+                  {
+                    currWire.bend1_x = xi - threadId - 1;
+                  }
+                  else {
+                    currWire.bend1_x = xi + threadId + 1;
+                  }
+                  
+                  currWire.bend1_y = yi;
+                }
+                else{
+                  currWire.bend1_x = xi;
+                    if (yi > yf) {
+                      currWire.bend1_y = yi - threadId - 1;
+                    }
+                    else {
+                      currWire.bend1_y = yi + threadId + 1;
+                    }
+                }
+                refOccupancy(occupancy, currWire,  dim_x,  dim_y, 1,false);
+                //update wire
+                wires[wireIndex] = currWire;
+                continue;
+
+              }
+              else
+              {
+
+              }
               int initial_cost = refOccupancy(occupancy, currWire, dim_x, dim_y, 0,false);
               int* costs = (int*) malloc(sizeof(int) * (delta_x + delta_y));
               struct Wire* possRoutes = (struct Wire*)malloc(sizeof(struct Wire)*(delta_x + delta_y));
@@ -457,11 +501,11 @@ int main(int argc, char *argv[]) {
 
               int min_ind = 0;
               int min_cost = INT_MAX;
-              std::random_device rd;  // obtain a random number from hardware
-              std::mt19937 gen(rd()); // seed the generator
+              // std::random_device rd;  // obtain a random number from hardware
+              // std::mt19937 gen(rd()); // seed the generator
 
-              // Define a distribution (uniform distribution between 0 and 1)
-              std::uniform_real_distribution<> dis(0.0, 1.0);
+              // // Define a distribution (uniform distribution between 0 and 1)
+              // std::uniform_real_distribution<> dis(0.0, 1.0);
 
               // Generate a random number between 0 and 1
               float random_number = dis(gen);
@@ -503,7 +547,7 @@ int main(int argc, char *argv[]) {
         }
       }
     }
-                                       
+
     //Parallelism between wires
     else
     {
@@ -601,7 +645,7 @@ int main(int argc, char *argv[]) {
                     else{
                       routes[i] = best_route;
                     }
-                    free(possRoutes);
+
                   }
 
                   // routes[i] = findBestRoute(occupancy, wires[wireIdx]);
@@ -614,7 +658,6 @@ int main(int argc, char *argv[]) {
                   // #pragma omp end atomic
                   wires[(batch_size * b) + i] = routes[i];
                 } 
-                free(routes);
               // } // end of task bracket 
                         
             }  //end of batch loop bracket

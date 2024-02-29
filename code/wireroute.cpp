@@ -399,7 +399,7 @@ int main(int argc, char *argv[]) {
             yf = currWire.end_y;
             int delta_x = std::abs(xf - xi);
             int delta_y = std::abs(yf - yi);
-            if(delta_x != 0 || delta_y != 0 )
+            if(delta_x != 0 && delta_y != 0 )
             {
               refOccupancy(occupancy,currWire,dim_x,dim_y, -1,false);
               int initial_cost = refOccupancy(occupancy, currWire, dim_x, dim_y, 0,false);

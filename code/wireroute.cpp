@@ -400,7 +400,7 @@ int main(int argc, char *argv[]) {
             yf = currWire.end_y;
             int delta_x = std::abs(xf - xi);
             int delta_y = std::abs(yf - yi);
-            if(delta_x != 0 || delta_y != 0 )
+            if(delta_x != 0 && delta_y != 0 )
             {
               refOccupancy(occupancy,currWire,dim_x,dim_y, -1,false);
               
@@ -413,16 +413,16 @@ int main(int argc, char *argv[]) {
               
               if(random_number < SA_prob)
               {
-                std::uniform_int_distribution<> dis(0, delta_x + delta_y - 1);
-                int random_index= dis(gen);
-                if(random_number < delt_x)
+                // std::uniform_int_distribution<> dis(0, delta_x + delta_y - 1);
+                // int random_index= dis(gen);
+                if(random_number < delta_x)
                 {
                   if(xi > xf)
                   {
-                    currWire.bend1_x = xi - threadId - 1;
+                    currWire.bend1_x = xi - (random_number) - 1;
                   }
                   else {
-                    currWire.bend1_x = xi + threadId + 1;
+                    currWire.bend1_x = xi + (random_number) + 1;
                   }
                   
                   currWire.bend1_y = yi;
@@ -430,10 +430,10 @@ int main(int argc, char *argv[]) {
                 else{
                   currWire.bend1_x = xi;
                     if (yi > yf) {
-                      currWire.bend1_y = yi - threadId - 1;
+                      currWire.bend1_y = yi - (random_number - delta_x) - 1;
                     }
                     else {
-                      currWire.bend1_y = yi + threadId + 1;
+                      currWire.bend1_y = yi + (random_number - delta_x) + 1;
                     }
                 }
                 refOccupancy(occupancy, currWire,  dim_x,  dim_y, 1,false);
@@ -445,7 +445,7 @@ int main(int argc, char *argv[]) {
               else
               {
 
-              }
+              
               int initial_cost = refOccupancy(occupancy, currWire, dim_x, dim_y, 0,false);
               int* costs = (int*) malloc(sizeof(int) * (delta_x + delta_y));
               struct Wire* possRoutes = (struct Wire*)malloc(sizeof(struct Wire)*(delta_x + delta_y));
@@ -508,18 +508,18 @@ int main(int argc, char *argv[]) {
               // std::uniform_real_distribution<> dis(0.0, 1.0);
 
               // Generate a random number between 0 and 1
-              float random_number = dis(gen);
-              
-              if(random_number < SA_prob)
-              {
-                std::uniform_int_distribution<> dis(0, delta_x + delta_y - 1);
-                int random_index= dis(gen);
-                refOccupancy(occupancy, possRoutes[random_index],  dim_x,  dim_y, 1,false);
-                //update wire
-                wires[wireIndex] = possRoutes[random_index];
-              }
-              else
-              {
+              // float random_number = dis(gen);
+              //
+              // if(random_number < SA_prob)
+              // {
+              //   std::uniform_int_distribution<> dis(0, delta_x + delta_y - 1);
+              //   int random_index= dis(gen);
+              //   refOccupancy(occupancy, possRoutes[random_index],  dim_x,  dim_y, 1,false);
+              //   //update wire
+              //   wires[wireIndex] = possRoutes[random_index];
+              // }
+              // else
+              // {
                 for (int i = 0; i < delta_x + delta_y; i ++) 
                 {
                   if (costs[i] < min_cost)
@@ -539,9 +539,10 @@ int main(int argc, char *argv[]) {
                 else{
                     refOccupancy(occupancy,original_wire,dim_x,dim_y, 1,false);
                 }
-              }
+              // }
               free(costs);
               free(possRoutes);
+              }
             }
           }
         }
@@ -590,7 +591,7 @@ int main(int argc, char *argv[]) {
                   yf = currWire.end_y;
                   int delta_x = std::abs(xf - xi);
                   int delta_y = std::abs(yf - yi);
-                  if(delta_x != 0 || delta_y != 0 ){
+                  if(delta_x != 0 && delta_y != 0 ){
                     refOccupancy(occupancy,currWire,dim_x,dim_y, -1,true);
                     int initial_cost = refOccupancy(occupancy, currWire, dim_x, dim_y, 0,true);
                     int min_cost = initial_cost;
@@ -645,7 +646,7 @@ int main(int argc, char *argv[]) {
                     else{
                       routes[i] = best_route;
                     }
-
+                    free(possRoutes);
                   }
 
                   // routes[i] = findBestRoute(occupancy, wires[wireIdx]);
@@ -659,7 +660,8 @@ int main(int argc, char *argv[]) {
                   wires[(batch_size * b) + i] = routes[i];
                 } 
               // } // end of task bracket 
-                        
+
+                 free(routes);       
             }  //end of batch loop bracket
           } // end of pragma omp parallel loop
         }  //end bracket of else
